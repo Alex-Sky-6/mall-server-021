@@ -56,4 +56,9 @@ public class Cart extends BaseEntity {
 
     @TableField("statu")
     private Integer statu;
+
+
+    //自定义：商品对象 ，表示该变量不是映射数据库sys_cart表，该字段就是为了查询需要添加的
+    @TableField(exist = false)
+    private Goods goods;
 }

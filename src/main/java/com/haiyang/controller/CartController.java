@@ -4,7 +4,9 @@ package com.haiyang.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.haiyang.common.Result;
 import com.haiyang.entity.Cart;
+import com.haiyang.entity.Goods;
 import com.haiyang.service.CartService;
+import com.haiyang.service.GoodsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +23,9 @@ public class CartController extends BaseController {
     @Autowired
     private CartService cartService;
 
+    @Autowired
+    private GoodsService goodsService;
+
     //商家列表，加载购物车方法
     @GetMapping("/listCartByAccountId/{accountId}")
     public Result listCart(@PathVariable String accountId) {
@@ -36,7 +41,13 @@ public class CartController extends BaseController {
         QueryWrapper<Cart> qw = new QueryWrapper<>();
         qw.eq("account_id", accountId);
         qw.eq("business_id", businessId);
+
         List<Cart> list = cartService.list(qw);
+        //使用购物车中 goods_id，再次查询商品数据
+        list.stream().forEach(cart -> {
+            Goods goods = goodsService.getById(cart.getGoodsId());
+            cart.setGoods(goods);
+        });
         return Result.success(list);
     }
 
