@@ -57,8 +57,8 @@ public class Orders extends BaseEntity {
     /**
      * 订单状态（0：未支付； 1：已支付）
      */
-    @TableField("state")
-    private Integer state;
+    @TableField("statu")
+    private Integer statu;
 
 
 }
