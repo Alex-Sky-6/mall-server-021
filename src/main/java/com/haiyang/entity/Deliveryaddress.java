@@ -1,25 +1,17 @@
 package com.haiyang.entity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.*;
 import com.haiyang.common.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/**
- * <p>
- * 
- * </p>
- *
- * @author Alex
- * @since 2025-06-22
- */
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = false)
 @TableName("sys_deliveryaddress")
-public class Deliveryaddress extends BaseEntity {
+public class Deliveryaddress implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -36,7 +28,7 @@ public class Deliveryaddress extends BaseEntity {
     private String contactName;
 
     /**
-     * 联系人性别
+     * 联系人性别（1-男，2-女）
      */
     @TableField("contact_sex")
     private Integer contactSex;
@@ -54,10 +46,27 @@ public class Deliveryaddress extends BaseEntity {
     private String address;
 
     /**
-     * 下单用户编号--sys_account表account_id
+     * 关联用户ID
      */
     @TableField("account_id")
     private String accountId;
 
 
+    /**
+     * 创建时间（自动填充）
+     */
+    @TableField(value = "created", fill = FieldFill.INSERT)
+    private LocalDateTime created;
+
+    /**
+     * 更新时间（自动填充）
+     */
+    @TableField(value = "updated", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updated;
+
+    /**
+     * 状态（1-有效，0-无效）
+     */
+    @TableField(value = "statu", fill = FieldFill.INSERT)
+    private Integer statu;
 }
