@@ -3,10 +3,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.haiyang.common.Result;
 import com.haiyang.entity.Business;
 import com.haiyang.entity.Cart;
+import com.haiyang.entity.Goods;
 import com.haiyang.entity.Orders;
 import com.haiyang.entity.Ordersdetailet;
 import com.haiyang.service.BusinessService;
 import com.haiyang.service.CartService;
+import com.haiyang.service.GoodsService;
 import com.haiyang.service.OrdersService;
 import com.haiyang.service.OrdersdetailetService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +30,10 @@ public class OrdersController extends BaseController {
     private OrdersdetailetService odService;
     @Autowired
     private BusinessService bService;
+    @Autowired
+    private GoodsService goodsService;
 
-    // 新增接口，通过订单号获取商家信息
+    // 新增接口，通过订单号获取商家信息和订单详细内容
     @GetMapping("/businessInfo/{orderId}")
     public Result getBusinessInfoByOrderId(@PathVariable Long orderId) {
         try {
@@ -43,13 +47,15 @@ public class OrdersController extends BaseController {
                 return Result.fail("订单不存在");
             }
 
-            // 2. 从订单中提取商家 ID（假设 Orders 有 getBusinessId 方法）
-            Long businessId = ordersList.get(0).getBusinessId();
+            Orders order = ordersList.get(0);
+            
+            // 2. 从订单中提取商家 ID
+            Long businessId = order.getBusinessId();
             if (businessId == null) {
                 return Result.fail("订单未关联商家");
             }
 
-            // 3. 查询商家信息（用商家 ID 构造新的 QueryWrapper）
+            // 3. 查询商家信息
             QueryWrapper<Business> businessWrapper = new QueryWrapper<>();
             businessWrapper.eq("business_id", businessId); // 商家表的 business_id
             Business businessInfo = bService.getOne(businessWrapper);
@@ -58,9 +64,32 @@ public class OrdersController extends BaseController {
                 return Result.fail("商家信息不存在");
             }
 
-            // 4. 将商家信息设置到订单对象中（遍历订单列表，给每个订单设置商家）
-            ordersList.forEach(order -> {
-                order.setBusiness(businessInfo); // 调用实例方法
+            // 4. 查询订单明细
+            QueryWrapper<Ordersdetailet> detailWrapper = new QueryWrapper<>();
+            detailWrapper.eq("order_id", orderId);
+            List<Ordersdetailet> orderDetails = odService.list(detailWrapper);
+
+            // 5. 查询商品信息（从订单明细中获取商品ID）
+            Goods goodsInfo = null;
+            if (!orderDetails.isEmpty()) {
+                Integer goodsId = orderDetails.get(0).getGoodsId();
+                if (goodsId != null) {
+                    goodsInfo = goodsService.getById(goodsId);
+                }
+            }
+
+            // 6. 将商家信息、订单明细和商品信息设置到订单对象中
+            final Goods finalGoodsInfo = goodsInfo;
+            ordersList.forEach(orderItem -> {
+                orderItem.setBusiness(businessInfo);
+                // 设置订单明细
+                if (!orderDetails.isEmpty()) {
+                    orderItem.setOrdersdetailet(orderDetails.get(0));
+                }
+                // 设置商品信息
+                if (finalGoodsInfo != null) {
+                    orderItem.setGoods(finalGoodsInfo);
+                }
             });
 
             return Result.success(ordersList);

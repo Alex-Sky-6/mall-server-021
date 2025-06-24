@@ -64,4 +64,10 @@ public class Orders extends BaseEntity {
     @TableField(exist = false)
     private Business business;
 
+    @TableField(exist = false)
+    private Ordersdetailet ordersdetailet;
+
+    @TableField(exist = false)
+    private Goods goods;
+
 }

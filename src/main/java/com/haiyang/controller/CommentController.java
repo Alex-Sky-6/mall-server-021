@@ -2,7 +2,15 @@ package com.haiyang.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.haiyang.entity.Comment;
+import com.haiyang.entity.Orders;
+import com.haiyang.entity.Ordersdetailet;
+import com.haiyang.entity.Goods;
+import com.haiyang.entity.Business;
 import com.haiyang.service.CommentService;
+import com.haiyang.service.OrdersService;
+import com.haiyang.service.OrdersdetailetService;
+import com.haiyang.service.GoodsService;
+import com.haiyang.service.BusinessService;
 import com.haiyang.common.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +19,7 @@ import com.haiyang.common.BaseController;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -28,11 +37,23 @@ public class CommentController extends BaseController {
 
     @Autowired
     private CommentService commentService;
+    
+    @Autowired
+    private OrdersService ordersService;
+    
+    @Autowired
+    private OrdersdetailetService ordersdetailetService;
+    
+    @Autowired
+    private GoodsService goodsService;
+    
+    @Autowired
+    private BusinessService businessService;
 
     /**
      * 根据用户ID查询用户的所有评论（个人中心-我的评论）
      * @param accountId 用户ID
-     * @return 用户评论列表
+     * @return 用户评论列表（包含商家名称和商品信息）
      */
     @GetMapping("/user/{accountId}")
     public Result getUserComments(@PathVariable String accountId) {
@@ -47,6 +68,32 @@ public class CommentController extends BaseController {
                 return Result.success("暂无评论数据");
             }
             
+            // 为每个评论设置商家名称和商品信息
+            for (Comment comment : commentList) {
+                // 设置商家名称
+                if (comment.getBusinessId() != null) {
+                    Business business = businessService.getById(comment.getBusinessId());
+                    if (business != null) {
+                        comment.setBusinessName(business.getBusinessName());
+                    }
+                }
+                
+                // 设置商品信息（获取订单中的第一个商品作为代表）
+                if (comment.getOrderId() != null) {
+                    QueryWrapper<Ordersdetailet> odWrapper = new QueryWrapper<>();
+                    odWrapper.eq("order_id", comment.getOrderId());
+                    List<Ordersdetailet> orderDetails = ordersdetailetService.list(odWrapper);
+                    
+                    if (!orderDetails.isEmpty()) {
+                        // 获取第一个商品信息
+                        Goods goods = goodsService.getById(orderDetails.get(0).getGoodsId());
+                        if (goods != null) {
+                            comment.setGoods(goods);
+                        }
+                    }
+                }
+            }
+            
             return Result.success(commentList);
         } catch (Exception e) {
             return Result.fail("查询用户评论失败：" + e.getMessage());
@@ -56,7 +103,7 @@ public class CommentController extends BaseController {
     /**
      * 根据商家ID查询商家的所有评论（商家详情-商家评论）
      * @param businessId 商家ID
-     * @return 商家评论列表
+     * @return 商家评论列表（包含商品信息）
      */
     @GetMapping("/business/{businessId}")
     public Result getBusinessComments(@PathVariable Long businessId) {
@@ -71,6 +118,24 @@ public class CommentController extends BaseController {
                 return Result.success("暂无评论数据");
             }
             
+            // 为每个评论设置商品信息
+            for (Comment comment : commentList) {
+                // 设置商品信息（获取订单中的第一个商品作为代表）
+                if (comment.getOrderId() != null) {
+                    QueryWrapper<Ordersdetailet> odWrapper = new QueryWrapper<>();
+                    odWrapper.eq("order_id", comment.getOrderId());
+                    List<Ordersdetailet> orderDetails = ordersdetailetService.list(odWrapper);
+                    
+                    if (!orderDetails.isEmpty()) {
+                        // 获取第一个商品信息
+                        Goods goods = goodsService.getById(orderDetails.get(0).getGoodsId());
+                        if (goods != null) {
+                            comment.setGoods(goods);
+                        }
+                    }
+                }
+            }
+            
             return Result.success(commentList);
         } catch (Exception e) {
             return Result.fail("查询商家评论失败：" + e.getMessage());
@@ -81,7 +146,7 @@ public class CommentController extends BaseController {
      * 根据商家ID和评分筛选查询评论（商家详情-评论筛选）
      * @param businessId 商家ID
      * @param ratingFilter 评分筛选条件：all(全部), good(好评>=4), medium(中评=3), bad(差评<=2)
-     * @return 筛选后的评论列表
+     * @return 筛选后的评论列表（包含商品信息）
      */
     @GetMapping("/business/{businessId}/filter")
     public Result getBusinessCommentsByRating(@PathVariable Long businessId, 
@@ -114,6 +179,24 @@ public class CommentController extends BaseController {
             
             if (commentList == null || commentList.isEmpty()) {
                 return Result.success("暂无评论数据");
+            }
+            
+            // 为每个评论设置商品信息
+            for (Comment comment : commentList) {
+                // 设置商品信息（获取订单中的第一个商品作为代表）
+                if (comment.getOrderId() != null) {
+                    QueryWrapper<Ordersdetailet> odWrapper = new QueryWrapper<>();
+                    odWrapper.eq("order_id", comment.getOrderId());
+                    List<Ordersdetailet> orderDetails = ordersdetailetService.list(odWrapper);
+                    
+                    if (!orderDetails.isEmpty()) {
+                        // 获取第一个商品信息
+                        Goods goods = goodsService.getById(orderDetails.get(0).getGoodsId());
+                        if (goods != null) {
+                            comment.setGoods(goods);
+                        }
+                    }
+                }
             }
             
             return Result.success(commentList);

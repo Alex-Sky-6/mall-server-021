@@ -65,5 +65,12 @@ public class Comment extends BaseEntity {
     @TableField("co_img")
     private String coImg;
 
+    @TableField(exist = false)
+    private Goods goods;
+
+    @TableField(exist = false)
+    private String businessName;
+
+
 
 }
