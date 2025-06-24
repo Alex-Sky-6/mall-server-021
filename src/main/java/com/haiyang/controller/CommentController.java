@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.haiyang.entity.Comment;
 import com.haiyang.service.CommentService;
 import com.haiyang.common.Result;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.haiyang.common.BaseController;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -21,6 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/comment")
 @CrossOrigin
+@Slf4j
 public class CommentController extends BaseController {
 
     @Autowired
@@ -88,21 +91,22 @@ public class CommentController extends BaseController {
             queryWrapper.eq("business_id", businessId);
             
             // 根据评分筛选条件添加查询条件
-            switch (ratingFilter) {
-                case "good":
-                    queryWrapper.ge("rate", 4.0); // 好评：评分>=4
-                    break;
-                case "medium":
-                    queryWrapper.eq("rate", 3.0); // 中评：评分=3
-                    break;
-                case "bad":
-                    queryWrapper.le("rate", 2.0); // 差评：评分<=2
-                    break;
-                case "all":
-                default:
-                    // 不添加评分筛选条件，查询全部
-                    break;
-            }
+        switch (ratingFilter) {
+            case "good":
+                queryWrapper.ge("rate", 4.0); // 好评：评分 >= 4
+                break;
+            case "medium":
+                queryWrapper.between("rate", 2.1, 3.9); // 中评：评分在 2 到 4 之间（不包含4）
+                break;
+            case "bad":
+                queryWrapper.le("rate", 2.0); // 差评：评分 <= 2
+                break;
+            case "all":
+            default:
+                // 不添加评分筛选条件，查询全部
+                break;
+        }
+
             
             queryWrapper.orderByDesc("created"); // 按创建时间倒序排列
             
@@ -135,6 +139,19 @@ public class CommentController extends BaseController {
             }
         } catch (Exception e) {
             return Result.fail("删除评论失败：" + e.getMessage());
+        }
+    }
+    @PostMapping("/save")
+    public Result save(@RequestBody Comment comment) {
+        comment.setCreated(LocalDateTime.now());
+        comment.setUpdated(LocalDateTime.now());
+        comment.setStatu(1);
+        boolean success = commentService.save(comment);
+        if (success) {
+            // 2. 正确的 Result 用法（假设 Result 有 success(String msg) 方法）
+            return Result.success("评论保存成功");
+        } else {
+            return Result.fail("评论保存失败");
         }
     }
 

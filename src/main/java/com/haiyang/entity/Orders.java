@@ -61,4 +61,7 @@ public class Orders extends BaseEntity {
     private Integer statu;
 
 
+    @TableField(exist = false)
+    private Business business;
+
 }

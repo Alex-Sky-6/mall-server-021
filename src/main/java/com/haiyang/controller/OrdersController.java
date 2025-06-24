@@ -1,9 +1,11 @@
 package com.haiyang.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.haiyang.common.Result;
+import com.haiyang.entity.Business;
 import com.haiyang.entity.Cart;
 import com.haiyang.entity.Orders;
 import com.haiyang.entity.Ordersdetailet;
+import com.haiyang.service.BusinessService;
 import com.haiyang.service.CartService;
 import com.haiyang.service.OrdersService;
 import com.haiyang.service.OrdersdetailetService;
@@ -24,6 +26,49 @@ public class OrdersController extends BaseController {
     private OrdersService ordersService;
     @Autowired
     private OrdersdetailetService odService;
+    @Autowired
+    private BusinessService bService;
+
+    // 新增接口，通过订单号获取商家信息
+    @GetMapping("/businessInfo/{orderId}")
+    public Result getBusinessInfoByOrderId(@PathVariable Long orderId) {
+        try {
+            // 1. 查询订单（带商家 ID）
+            QueryWrapper<Orders> orderWrapper = new QueryWrapper<>();
+            orderWrapper.eq("order_id", orderId); // 订单表的 order_id
+            orderWrapper.orderByDesc("created");
+            List<Orders> ordersList = ordersService.list(orderWrapper);
+
+            if (ordersList.isEmpty()) {
+                return Result.fail("订单不存在");
+            }
+
+            // 2. 从订单中提取商家 ID（假设 Orders 有 getBusinessId 方法）
+            Long businessId = ordersList.get(0).getBusinessId();
+            if (businessId == null) {
+                return Result.fail("订单未关联商家");
+            }
+
+            // 3. 查询商家信息（用商家 ID 构造新的 QueryWrapper）
+            QueryWrapper<Business> businessWrapper = new QueryWrapper<>();
+            businessWrapper.eq("business_id", businessId); // 商家表的 business_id
+            Business businessInfo = bService.getOne(businessWrapper);
+
+            if (businessInfo == null) {
+                return Result.fail("商家信息不存在");
+            }
+
+            // 4. 将商家信息设置到订单对象中（遍历订单列表，给每个订单设置商家）
+            ordersList.forEach(order -> {
+                order.setBusiness(businessInfo); // 调用实例方法
+            });
+
+            return Result.success(ordersList);
+        } catch (Exception e) {
+            return Result.fail("查询失败：" + e.getMessage());
+        }
+    }
+
     //事务
     @Transactional
     @PostMapping("/save")
